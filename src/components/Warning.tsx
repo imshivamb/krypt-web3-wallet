@@ -2,7 +2,8 @@ import { LockKeyhole } from "lucide-react";
 import React, { useState } from "react";
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
-import { Step, useWallet } from "@/context/wallet-context";
+import { useWallet } from "@/context/wallet-context";
+import { Step } from "@/types/wallet";
 
 type Props = {};
 

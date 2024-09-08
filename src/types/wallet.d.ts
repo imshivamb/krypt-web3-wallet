@@ -1,6 +1,16 @@
+type NetworkType = 'solana' | 'ethereum';
+
 export type Wallet =  {
     privateKey: string,
     publicKey: string,
-    network: 'solana' | 'ethereum'
+    network: NetworkType
     name: string
 }
+
+export enum Step {
+    WELCOME,
+    NETWORK_SELECTION,
+    WARNING,
+    SEED_PHRASE,
+    CREATE_WALLET,
+  }

@@ -1,14 +1,6 @@
 "use client";
-import { Wallet } from "@/types/wallet";
+import { Step, Wallet } from "@/types/wallet";
 import { createContext, ReactNode, useContext, useState } from "react";
-
-export enum Step {
-  WELCOME,
-  NETWORK_SELECTION,
-  WARNING,
-  SEED_PHRASE,
-  CREATE_WALLET,
-}
 
 interface WalletContextProps {
   step: Step;

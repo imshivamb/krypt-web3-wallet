@@ -1,10 +1,11 @@
-import { Step, useWallet } from "@/context/wallet-context";
+import { useWallet } from "@/context/wallet-context";
 import React, { useEffect, useState } from "react";
 import * as bip39 from "bip39";
 import { createWallet } from "@/lib/createWallet";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
 import { Copy } from "lucide-react";
+import { Step } from "@/types/wallet";
 
 type Props = {};
 

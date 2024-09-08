@@ -1,7 +1,8 @@
-import { Step, useWallet } from "@/context/wallet-context";
+import { useWallet } from "@/context/wallet-context";
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import Image from "next/image";
+import { Step } from "@/types/wallet";
 
 type Props = {};
 

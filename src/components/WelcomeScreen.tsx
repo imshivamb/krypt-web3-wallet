@@ -1,7 +1,8 @@
 import { ShipWheel } from "lucide-react";
 import React from "react";
 import { Button } from "./ui/button";
-import { Step, useWallet } from "@/context/wallet-context";
+import { useWallet } from "@/context/wallet-context";
+import { Step } from "@/types/wallet";
 
 type Props = {};
 
