@@ -1,4 +1,5 @@
 "use client";
+import { Wallet } from "@/types/wallet";
 import { createContext, ReactNode, useContext, useState } from "react";
 
 export enum Step {
@@ -18,6 +19,9 @@ interface WalletContextProps {
   setSeedPhrase: (seedPhrase: string) => void;
   agreed: boolean;
   setAgreed: (agreed: boolean) => void;
+  wallets: Wallet[];
+  setWallets: (wallets: Wallet[]) => void;
+  addWallet: (wallet: Wallet) => void;
 }
 
 const WalletContext = createContext<WalletContextProps | undefined>(undefined);
@@ -27,6 +31,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [network, setNetwork] = useState<"solana" | "ethereum" | null>(null);
   const [seedPhrase, setSeedPhrase] = useState<string>("");
   const [agreed, setAgreed] = useState<boolean>(false);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+
+  const addWallet = (wallet: Wallet) => {
+    setWallets((prevWallets) => [...prevWallets, wallet]);
+  };
 
   return (
     <WalletContext.Provider
@@ -39,6 +48,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         setSeedPhrase,
         agreed,
         setAgreed,
+        wallets,
+        setWallets,
+        addWallet,
       }}
     >
       {children}

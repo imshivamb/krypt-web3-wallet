@@ -4,6 +4,7 @@ import "./globals.css";
 import ThemeContextProvider from "@/context/theme-context";
 import ThemeSwitch from "@/components/ui/theme-switch";
 import { WalletProvider } from "@/context/wallet-context";
+import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function RootLayout({
         <WalletProvider>
           <ThemeContextProvider>
             {children}
+            <Toaster />
             <ThemeSwitch />
           </ThemeContextProvider>
         </WalletProvider>

@@ -1,6 +1,7 @@
 "use client";
 
 import NetworkSelection from "@/components/NetworkSelection";
+import SeedPhrase from "@/components/SeedPhrase";
 import Warning from "@/components/Warning";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { Step, useWallet } from "@/context/wallet-context";
@@ -12,6 +13,7 @@ export default function Home() {
       {step === Step.WELCOME && <WelcomeScreen />}
       {step === Step.NETWORK_SELECTION && <NetworkSelection />}
       {step === Step.WARNING && <Warning />}
+      {step === Step.SEED_PHRASE && <SeedPhrase />}
     </div>
   );
 }
