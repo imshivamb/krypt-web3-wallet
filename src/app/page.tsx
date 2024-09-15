@@ -1,5 +1,6 @@
 "use client";
 
+import EnhancedWallet from "@/components/EnhancedWallet";
 import NetworkSelection from "@/components/NetworkSelection";
 import SeedPhrase from "@/components/SeedPhrase";
 import Warning from "@/components/Warning";
@@ -15,6 +16,7 @@ export default function Home() {
       {step === Step.NETWORK_SELECTION && <NetworkSelection />}
       {step === Step.WARNING && <Warning />}
       {step === Step.SEED_PHRASE && <SeedPhrase />}
+      {step === Step.CREATE_WALLET && <EnhancedWallet />}
     </div>
   );
 }

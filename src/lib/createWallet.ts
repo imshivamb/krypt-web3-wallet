@@ -26,7 +26,9 @@ export async function createWallet(
         };
     } else if(network === 'ethereum') {
         const hdNode = HDNodeWallet.fromSeed(seed);
-        const wallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
+        const derivationPath = `m/44'/60'/${index}'/0'`;
+        const child = hdNode.derivePath(derivationPath);
+        const wallet = new EthWallet(child.privateKey)
         return {
             name,
             publicKey: wallet.address,
