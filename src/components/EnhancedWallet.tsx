@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { Button } from "./ui/button";
 
 type Props = {};
 
@@ -187,6 +188,91 @@ const EnhancedWallet = (props: Props) => {
           <SelectItem value="ethereum">Ethereum</SelectItem>
         </SelectContent>
       </Select>
+
+      <div className="w-full mb-6">
+        {wallets
+          .filter((wallet) => wallet.network === network)
+          .map((wallet, index) => (
+            <div
+              key={index}
+              className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded"
+            >
+              <p>
+                <strong>Name:</strong> {wallet.name}
+              </p>
+              <p>
+                <strong>Network:</strong> {wallet.network}
+              </p>
+              <p>
+                <strong>Address:</strong> {wallet.publicKey}
+              </p>
+              <p>
+                <strong>Balance:</strong> {wallet.balance}{" "}
+                {wallet.network === "solana" ? "SOL" : "ETH"}
+              </p>
+              {/* {wallet.accountInfo && (
+                <p>
+                  <strong>Transaction Count:</strong>{" "}
+                  {wallet.accountInfo.transactionCount}
+                </p>
+              )} */}
+            </div>
+          ))}
+      </div>
+
+      <Input
+        type="text"
+        placeholder="Enter wallet name (optional)"
+        value={walletName}
+        onChange={(e) => setWalletName(e.target.value)}
+        className="mb-4"
+      />
+
+      <Button
+        onClick={handleCreateWallet}
+        disabled={isCreating}
+        className="text-base w-full p-6 mb-4 rounded-xl bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800"
+      >
+        {isCreating ? "Creating..." : "Create New Wallet"}
+      </Button>
+
+      <h2 className="text-2xl mb-4 font-bold">Send Transaction</h2>
+
+      <Select
+        value={selectedWallet !== null ? selectedWallet.toString() : ""}
+        onValueChange={(value) => setSelectedWallet(Number(value))}
+        className="mb-4"
+      >
+        {wallets.map((wallet, index) => (
+          <SelectTrigger key={index} value={index.toString()}>
+            {wallet.name}
+          </SelectTrigger>
+        ))}
+      </Select>
+
+      <Input
+        type="text"
+        placeholder="Recipient Address"
+        value={recipient}
+        onChange={(e) => setRecipient(e.target.value)}
+        className="mb-4"
+      />
+
+      <Input
+        type="text"
+        placeholder="Amount"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        className="mb-4"
+      />
+
+      <Button
+        onClick={handleSend}
+        disabled={isSending || selectedWallet === null}
+        className="text-base w-full p-6 rounded-xl bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800"
+      >
+        {isSending ? "Sending..." : "Send"}
+      </Button>
     </div>
   );
 };
