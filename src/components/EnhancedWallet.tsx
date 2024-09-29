@@ -1,6 +1,7 @@
 import { useWallet } from "@/context/wallet-context";
 import { useToast } from "@/hooks/use-toast";
 import { createWallet } from "@/lib/createWallet";
+import { useRouter } from "next/navigation";
 import {
   getAccountInfo,
   getBalance,
@@ -8,6 +9,7 @@ import {
   getTransactionCount,
   sendTransaction,
 } from "@/lib/transactionUtils";
+import { Step } from "@/types/wallet";
 import { NetworkType, Wallet } from "@/types/wallet";
 import React, { useEffect, useState } from "react";
 import {
@@ -17,23 +19,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 type Props = {};
 
 const EnhancedWallet = (props: Props) => {
-  const { wallets, network, setNetwork, setWallets, seedPhrase } = useWallet();
+  const { wallets, network, setNetwork, setWallets, seedPhrase, setStep } =
+    useWallet();
   const [isCreating, setIsCreating] = useState(false);
   const [walletName, setWalletName] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState("");
   const [selectedWallet, setSelectedWallet] = useState<number | null>(null);
+  const [walletToDelete, setWalletToDelete] = useState<number | null>(null);
   const { toast } = useToast();
   const [networkInfo, setNetworkInfo] = useState<{
     transactionCount: number;
     latestBlock: number;
   } | null>(null);
+  const [visiblePrivateKeys, setVisiblePrivateKeys] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Loading stored wallets on component mount
+    const storedWallets = localStorage.getItem("wallets");
+    if (storedWallets) {
+      setWallets(JSON.parse(storedWallets));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("wallets", JSON.stringify(wallets));
+  }, [wallets]);
 
   useEffect(() => {
     const fetchWalletInfo = async () => {
@@ -59,11 +93,11 @@ const EnhancedWallet = (props: Props) => {
           );
           setWallets(updatedWallets);
         }
-        if (network) {
-          const txCount = await getTransactionCount(network);
-          const latestBlock = await getLatestBlockNumber(network);
-          setNetworkInfo({ transactionCount: txCount, latestBlock });
-        }
+        // if (network) {
+        //   const txCount = await getTransactionCount(network);
+        //   const latestBlock = await getLatestBlockNumber(network);
+        //   setNetworkInfo({ transactionCount: txCount, latestBlock });
+        // }
       } catch (error) {
         console.error("Error fetching wallet info:", error);
         toast({
@@ -74,7 +108,14 @@ const EnhancedWallet = (props: Props) => {
       }
     };
     fetchWalletInfo();
-  }, [wallets, network, setWallets, toast]);
+  }, [network, setWallets]);
+
+  const togglePrivateKeyVisibility = (publicKey: string) => {
+    setVisiblePrivateKeys((prev) => ({
+      ...prev,
+      [publicKey]: !prev[publicKey],
+    }));
+  };
 
   const handleCreateWallet = async () => {
     if (!network || !seedPhrase) {
@@ -97,7 +138,10 @@ const EnhancedWallet = (props: Props) => {
             wallets.length + 1
           }`
       );
-      setWallets([...wallets, newWallet]);
+      // Fetch the balance for the new wallet
+      const balance = await getBalance(newWallet.publicKey, newWallet.network);
+      const walletWithBalance = { ...newWallet, balance };
+      setWallets([...wallets, walletWithBalance]);
       setWalletName("");
       toast({
         title: "Wallet Created",
@@ -143,6 +187,7 @@ const EnhancedWallet = (props: Props) => {
       });
       // Refresh wallet balance after sending transaction
       const newBalance = await getBalance(wallet.publicKey, wallet.network);
+      console.log(newBalance);
       const updatedWallets = [...wallets];
       updatedWallets[selectedWallet] = { ...wallet, balance: newBalance };
       setWallets(updatedWallets);
@@ -160,34 +205,129 @@ const EnhancedWallet = (props: Props) => {
 
   const handleNetworkChange = (newNetwork: NetworkType | "") => {
     if (newNetwork === "") {
-      // Handle the case where no network is selected, if needed
       setNetwork(null);
       return;
     }
     setNetwork(newNetwork);
-    const filteredWallets = wallets.filter(
-      (wallet) => wallet.network === newNetwork
-    );
-    setWallets(filteredWallets);
+  };
+
+  const handleDeleteWallet = (walletIndex: number) => {
+    const updatedWallets = wallets.filter((_, index) => index !== walletIndex);
+    const deletedWallet = wallets[walletIndex];
+
+    if (updatedWallets.length === 0) {
+      setStep(Step.WELCOME);
+      setNetwork(null);
+    } else if (
+      !updatedWallets.some((wallet) => wallet.network === deletedWallet.network)
+    ) {
+      setNetwork(null);
+    }
+
+    if (selectedWallet !== null) {
+      if (selectedWallet === walletIndex) {
+        setSelectedWallet(null);
+      } else if (selectedWallet > walletIndex) {
+        setSelectedWallet(selectedWallet - 1);
+      }
+    }
+
+    setWallets(updatedWallets);
+    setWalletToDelete(null);
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Wallet Deleted",
+      description: "The selected wallet has been deleted.",
+    });
   };
   return (
-    <div className="flex  flex-col items-center justify-center w-full max-w-2xl px-6 py-5">
+    <div className="flex  flex-col items-center justify-center w-full max-w-screen-xl px-6 py-5">
       <h1 className="text-3xl lg:text-4xl mb-4 font-bold">Your Wallets</h1>
 
-      <Select
-        value={network || ""}
-        onValueChange={(value: "solana" | "ethereum") =>
-          handleNetworkChange(value)
-        }
-      >
-        <SelectTrigger>
-          <SelectValue>{network || "Select Network"}</SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="solana">Solana</SelectItem>
-          <SelectItem value="ethereum">Ethereum</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="mb-5 flex items-center justify-end w-full gap-6">
+        <Dialog open={isSendDialogOpen} onOpenChange={setIsSendDialogOpen}>
+          <DialogTrigger asChild className="w-56">
+            <Button className="text-sm w-48 p-[18px]  rounded-xl bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800">
+              Send Transaction
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Transaction</DialogTitle>
+            </DialogHeader>
+            <Select
+              value={selectedWallet !== null ? selectedWallet.toString() : ""}
+              onValueChange={(value) => setSelectedWallet(Number(value))}
+            >
+              <SelectTrigger className="mt-5">
+                <SelectValue placeholder="Select Wallet" />
+              </SelectTrigger>
+              <SelectContent>
+                {wallets.map((wallet, index) => (
+                  <SelectItem key={index} value={index.toString()}>
+                    {wallet.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="text"
+              placeholder="Recipient Address"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              className=""
+            />
+            <Input
+              type="text"
+              placeholder="Amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className=""
+            />
+            <Button
+              onClick={handleSend}
+              disabled={
+                isSending ||
+                selectedWallet === null ||
+                amount === "" ||
+                recipient === ""
+              }
+              className="text-base w-full p-5 rounded-lg bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800"
+            >
+              {isSending ? "Sending..." : "Send"}
+            </Button>
+          </DialogContent>
+        </Dialog>
+        <Input
+          type="text"
+          placeholder="Enter wallet name (optional)"
+          value={walletName}
+          onChange={(e) => setWalletName(e.target.value)}
+          className=" w-56"
+        />
+
+        <Button
+          onClick={handleCreateWallet}
+          disabled={isCreating}
+          className="text-sm w-36 p-[18px] rounded-xl bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800"
+        >
+          {isCreating ? "Creating..." : " New Wallet"}
+        </Button>
+        <Select
+          value={network || ""}
+          onValueChange={(value: "solana" | "ethereum") =>
+            handleNetworkChange(value)
+          }
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue>{network || "Select Network"}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="solana">Solana</SelectItem>
+            <SelectItem value="ethereum">Ethereum</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="w-full mb-6">
         {wallets
@@ -207,9 +347,73 @@ const EnhancedWallet = (props: Props) => {
                 <strong>Address:</strong> {wallet.publicKey}
               </p>
               <p>
-                <strong>Balance:</strong> {wallet.balance}{" "}
-                {wallet.network === "solana" ? "SOL" : "ETH"}
+                <strong>Private Key:</strong>
+                {visiblePrivateKeys[wallet.publicKey]
+                  ? wallet.privateKey
+                  : "••••••••••••••••"}
+                <button
+                  onClick={() => togglePrivateKeyVisibility(wallet.publicKey)}
+                  className="ml-2"
+                >
+                  {visiblePrivateKeys[wallet.publicKey] ? (
+                    <EyeOff size={16} />
+                  ) : (
+                    <Eye size={16} />
+                  )}
+                </button>
               </p>
+              <div className="flex justify-between items-center mt-2">
+                <p>
+                  <strong>Balance:</strong> {wallet.balance}{" "}
+                  {wallet.network === "solana" ? "SOL" : "ETH"}
+                </p>
+                <Dialog
+                  open={isDeleteDialogOpen}
+                  onOpenChange={setIsDeleteDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setWalletToDelete(index);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 size={16} className="" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>
+                        Are you sure you want to delete this wallet?
+                      </DialogTitle>
+                      <DialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete your wallet and remove the data from our servers.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsDeleteDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          if (walletToDelete !== null) {
+                            handleDeleteWallet(walletToDelete);
+                          }
+                        }}
+                      >
+                        Delete Wallet
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
               {/* {wallet.accountInfo && (
                 <p>
                   <strong>Transaction Count:</strong>{" "}
@@ -219,60 +423,6 @@ const EnhancedWallet = (props: Props) => {
             </div>
           ))}
       </div>
-
-      <Input
-        type="text"
-        placeholder="Enter wallet name (optional)"
-        value={walletName}
-        onChange={(e) => setWalletName(e.target.value)}
-        className="mb-4"
-      />
-
-      <Button
-        onClick={handleCreateWallet}
-        disabled={isCreating}
-        className="text-base w-full p-6 mb-4 rounded-xl bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800"
-      >
-        {isCreating ? "Creating..." : "Create New Wallet"}
-      </Button>
-
-      <h2 className="text-2xl mb-4 font-bold">Send Transaction</h2>
-
-      <Select
-        value={selectedWallet !== null ? selectedWallet.toString() : ""}
-        onValueChange={(value) => setSelectedWallet(Number(value))}
-        className="mb-4"
-      >
-        {wallets.map((wallet, index) => (
-          <SelectTrigger key={index} value={index.toString()}>
-            {wallet.name}
-          </SelectTrigger>
-        ))}
-      </Select>
-
-      <Input
-        type="text"
-        placeholder="Recipient Address"
-        value={recipient}
-        onChange={(e) => setRecipient(e.target.value)}
-        className="mb-4"
-      />
-
-      <Input
-        type="text"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        className="mb-4"
-      />
-
-      <Button
-        onClick={handleSend}
-        disabled={isSending || selectedWallet === null}
-        className="text-base w-full p-6 rounded-xl bg-gray-900 dark:bg-gray-100 border-2 border-gray-600 text-white dark:text-gray-800"
-      >
-        {isSending ? "Sending..." : "Send"}
-      </Button>
     </div>
   );
 };

@@ -1,13 +1,15 @@
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction, SystemProgram, Transaction } from "@solana/web3.js";
 import { ethers } from "ethers";
+import bs58 from "bs58";
 
 const SOLANA_RPC_URL = 'https://api.devnet.solana.com';
-const ETH_RPC_URL = `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`;
+const ETH_RPC_URL = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
 
 async function sendJsonRpcRequest(url: string, method: string, params: any[]) {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
+
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -57,7 +59,7 @@ export async function getAccountInfo(address: string, network: 'solana' | 'ether
 export async function getTransactionCount( network: 'solana' | 'ethereum'): Promise<number> {
     try {
         if(network === 'solana') {
-            const result = await sendJsonRpcRequest(SOLANA_RPC_URL, 'getTranasactionCount', []);
+            const result = await sendJsonRpcRequest(SOLANA_RPC_URL, 'getTransactionCount', []);
             return result.result;
         } else {
             const result = await sendJsonRpcRequest(ETH_RPC_URL, 'eth_blockNumber', []);
@@ -88,7 +90,7 @@ export async function sendTransaction( network: 'solana' | 'ethereum', privateKe
     try {
         if(network === 'solana') {
             const connection = new Connection(SOLANA_RPC_URL);
-            const senderKeyPair = Keypair.fromSecretKey(Buffer.from(privateKey, 'hex'));
+            const senderKeyPair = Keypair.fromSecretKey(bs58.decode(privateKey));
             const recipientPubKey = new PublicKey(recipient);
 
             const transaction = new Transaction().add(

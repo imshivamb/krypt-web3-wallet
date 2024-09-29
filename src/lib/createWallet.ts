@@ -4,6 +4,7 @@ import { derivePath } from "ed25519-hd-key";
 import nacl from "tweetnacl";
 import { Keypair } from "@solana/web3.js";
 import { Wallet as EthWallet, HDNodeWallet } from "ethers";
+import bs58 from "bs58";
 
 export async function createWallet(
     network: 'solana' | 'ethereum',
@@ -21,7 +22,7 @@ export async function createWallet(
         return {
             name,
             publicKey: keyPair.publicKey.toBase58(),
-            privateKey: Buffer.from(keyPair.secretKey).toString('hex'),
+            privateKey: bs58.encode(keyPair.secretKey),
             network: 'solana'
         };
     } else if(network === 'ethereum') {
