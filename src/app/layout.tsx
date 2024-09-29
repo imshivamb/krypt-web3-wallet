@@ -5,6 +5,9 @@ import ThemeContextProvider from "@/context/theme-context";
 import ThemeSwitch from "@/components/ui/theme-switch";
 import { WalletProvider } from "@/context/wallet-context";
 import { Toaster } from "@/components/ui/toaster";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -20,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="!scroll-smooth">
-      <body className={`bg-white dark:bg-gray-950 ${inter.className}`}>
+      <body className={`bg-white dark:bg-gray-950 ${GeistMono.className}`}>
         <WalletProvider>
           <ThemeContextProvider>
             {children}
